@@ -116,3 +116,70 @@ public class TimesheetApp {
         }
     }
 }
+
+
+import React, {useState, useEffect} from 'react'
+
+function TimesheetApp() {
+  const [employeeName, setEmployeeName] = useState('')
+  const [timesheets, setTimesheets] = useState([])
+
+  const handleEntry = async () => {
+    const response = await fetch(
+      `/api/timesheets/entry?employeeName=${employeeName}`,
+      {
+        method: 'POST',
+      },
+    )
+    const data = await response.json()
+    setTimesheets([...timesheets, data])
+  }
+
+  const handleExit = async (id) => {
+    const response = await fetch(`/api/timesheets/exit/${id}`, {
+      method: 'PUT',
+    })
+    const data = await response.json()
+    setTimesheets(timesheets.map((sheet) => (sheet.id === id ? data : sheet)))
+  }
+
+  useEffect(() => {
+    const fetchTimesheets = async () => {
+      const response = await fetch('/api/timesheets')
+      const data = await response.json()
+      setTimesheets(data)
+    }
+    fetchTimesheets()
+  }, [])
+
+  return (
+    <div>
+      <h1>Timesheet Entry/Exit</h1>
+      <input
+        type="text"
+        value={employeeName}
+        onChange={(e) => setEmployeeName(e.target.value)}
+        placeholder="Employee Name"
+      />
+      <button onClick={handleEntry}>Log Entry</button>
+
+      <h2>Timesheet Logs</h2>
+      <ul>
+        {timesheets.map((sheet) => (
+          <li key={sheet.id}>
+            {sheet.employeeName} - Entry:{' '}
+            {new Date(sheet.entryTime).toLocaleString()}{' '}
+            {sheet.exitTime
+              ? ` - Exit: ${new Date(sheet.exitTime).toLocaleString()}`
+              : ''}
+            {!sheet.exitTime && (
+              <button onClick={() => handleExit(sheet.id)}>Log Exit</button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+export default TimesheetApp
